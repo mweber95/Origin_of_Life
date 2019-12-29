@@ -27,16 +27,62 @@ class ParsingXml:
     def __init__(self, xml_files):
         self.xml = xml_files
 
-    def ids(self):
-        splitted = [os.path.split(x) for x in self.xml]
-        ids = [x[:9] for _, x in splitted]
-        return ids
+    def definition(self):
+        id_definition = {}
+        for file in self.xml:
+            "repeating element"
+            _, file_id = os.path.split(file)
+            id = file_id[:9]
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for part in root.findall('GBSeq'):
+                definition = part.find("GBSeq_definition").text
+                id_definition[id] = definition
+        return id_definition
 
-    def baltimore(self, ids, old_baltimore):
-        baltimore = "need to continue here"
-        return baltimore
+    def length(self):
+        id_length = {}
+        for file in self.xml:
+            "repeating element"
+            _, file_id = os.path.split(file)
+            id = file_id[:9]
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for part in root.findall('GBSeq'):
+                length = part.find("GBSeq_length").text
+                id_length[id] = int(length)
+        return id_length
 
-    def builder(self, ids, baltimore, length, lineage, cds, mol_type):
+    def lineage(self):
+        id_lineage = {}
+        for file in self.xml:
+            "repeating element"
+            _, file_id = os.path.split(file)
+            id = file_id[:9]
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for part in root.findall('GBSeq'):
+                taxonomy = part.find("GBSeq_taxonomy").text
+                id_lineage[id] = taxonomy.split("; ")
+        return id_lineage
+
+    def mol_type(self):
+        id_moltype = {}
+        for file in self.xml:
+            "repeating element"
+            _, file_id = os.path.split(file)
+            id = file_id[:9]
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for part in root.findall('GBSeq'):
+                moltype = part.find("GBSeq_moltype").text
+                id_moltype[id] = moltype
+        return id_moltype
+
+    def cds(self):
+        pass
+
+    def builder(self, ids, baltimore, definition, length, lineage, mol_type, cds):
         pass
 
 

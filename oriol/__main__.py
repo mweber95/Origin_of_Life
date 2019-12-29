@@ -56,11 +56,17 @@ if __name__ == "__main__":
         xml_download_baltimore_6 = GetXml(baltimore_6, "katrin", "ncbi")
         xml_download_baltimore_6.download()
 
-    xml_files = glob.glob(os.path.join("oriol//data/katrin/ncbi_xml/", "*.xml"))
+    xml_files = glob.glob(os.path.join("oriol/data/katrin/ncbi_xml/", "*.xml"))
+
+    splitted = [os.path.split(x) for x in xml_files]
+    "Only NCBI optimized"
+    ids = [x[:9] for _, x in splitted]
 
     parser = ParsingXml(xml_files)
-
-    a = parser.ids()
-    print(a)
+    definition = parser.definition()
+    length = parser.length()
+    lineage = parser.lineage()
+    mol_type = parser.mol_type()
+    print(mol_type)
 
 
