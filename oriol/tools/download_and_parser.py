@@ -80,10 +80,77 @@ class ParsingXml:
         return id_moltype
 
     def cds(self):
-        pass
+        id_cds = {}
+        for file in self.xml:
+            "repeating element"
+            _, file_id = os.path.split(file)
+            id = file_id[:9]
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for gbseq in root.findall("GBSeq"):
+                cds = []
+                for gbtable in gbseq.findall('GBSeq_feature-table'):
+                    for gbfeature in gbtable.findall("GBFeature"):
+                        for location, feature in zip(gbfeature.findall("GBFeature_location"), gbfeature.findall("GBFeature_key")):
+                            if feature.text == "CDS":
+                                cds.append(location.text)
+                    id_cds[id] = cds
+        return id_cds
 
-    def builder(self, ids, baltimore, definition, length, lineage, mol_type, cds):
-        pass
+    def sequence(self):
+        id_sequence = {}
+        for file in self.xml:
+            "repeating element"
+            _, file_id = os.path.split(file)
+            id = file_id[:9]
+            tree = ET.parse(file)
+            root = tree.getroot()
+            for part in root.findall('GBSeq'):
+                sequence = part.find("GBSeq_sequence").text
+                id_sequence[id] = sequence.upper()
+        return id_sequence
+
+    def builder(self, ids, baltimore, definition, length, lineage, mol_type, cds, sequence):
+        json_dict = {}
+        for id in ids:
+            json_dict[id] = {}
+
+        for id in baltimore:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["baltimore_group"] = baltimore[id]
+
+        for id in definition:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["definition"] = definition[id]
+
+        for id in length:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["length"] = length[id]
+
+        for id in lineage:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["lineage"] = lineage[id]
+
+        for id in mol_type:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["mol_type"] = mol_type[id]
+
+        for id in cds:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["CDS"] = cds[id]
+
+        for id in sequence:
+            for key in json_dict:
+                if id == key:
+                    json_dict[id]["sequence"] = sequence[id]
+
+        return json_dict
 
 
     #tree = ET.parse('country_data.xml')

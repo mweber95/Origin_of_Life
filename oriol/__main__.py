@@ -1,5 +1,6 @@
 import argparse
 import glob
+import json
 import numpy as np
 import os
 from Bio import Entrez
@@ -62,11 +63,29 @@ if __name__ == "__main__":
     "Only NCBI optimized"
     ids = [x[:9] for _, x in splitted]
 
+    baltimore = {}
+    balti_4 = [key for key in baltimore_4]
+    balti_5 = [key for key in baltimore_5]
+    balti_6 = [key for key in baltimore_6]
+    for element in balti_4:
+        baltimore[element] = 4
+    for element in balti_5:
+        baltimore[element] = 5
+    for element in balti_6:
+        baltimore[element] = 6
+
     parser = ParsingXml(xml_files)
     definition = parser.definition()
     length = parser.length()
     lineage = parser.lineage()
     mol_type = parser.mol_type()
-    print(mol_type)
+    cds = parser.cds()
+    sequence = parser.sequence()
+
+    json_dict = parser.builder(ids, baltimore, definition, length, lineage, mol_type, cds, sequence)
+
+    os.mknod("oriol/data/katrin/ncbi.json")
+    with open('oriol/data/katrin/ncbi.json', 'w') as f:
+        json.dump(json_dict, f, indent=3)
 
 

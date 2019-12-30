@@ -1,4 +1,10 @@
 /oriol/data
+data.json
+dataset.py
+get_sequences.py
+mds.py
+regular.py
+test.py
 .RData
 .Rhistory
 .idea
