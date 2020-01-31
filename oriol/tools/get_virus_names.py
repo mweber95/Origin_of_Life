@@ -4,14 +4,13 @@ from bs4 import BeautifulSoup as bs
 
 
 class ViralZone:
-    def __init__(self, name, id_type):
-        self.name = name
+    def __init__(self, id_type):
         self.id_type = id_type
 
-    def crawler(self):
+    def crawler(self, url_list):
         baltimore_groups = []
-        for url in self.name:
-            html_code = requests.get(self.name[url])
+        for url in url_list:
+            html_code = requests.get(url_list[url])
             soup = bs(html_code.content, "html.parser")
             c = [viruses for viruses in soup.getText().split() if any(x in viruses for x in ["virus", "viridae"])]
             baltimore_groups.append(c)
@@ -20,7 +19,7 @@ class ViralZone:
     def extracting_accession_numbers(self, virus_names):
         accession_dict = {}
         with open("oriol/data/viral.txt") as file:
-            for line in file:
+            for line in file:                           ### for line, virus in zip()
                 for virus in virus_names:
                     if virus in line:
                         if self.id_type == "ncbi":

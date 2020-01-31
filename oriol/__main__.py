@@ -1,16 +1,15 @@
 import argparse
 import glob
 import json
-import numpy as np
 import os
 from Bio import Entrez
 from oriol.tools.get_virus_names import ViralZone
 from oriol.tools.download_and_parser import GetXml
 from oriol.tools.download_and_parser import ParsingXml
+from oriol.tools.download_and_parser import splitting_downloaded_xml
 from urllib import request as urlreq
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--person", required=True, help="Who's that pokemon?", choices=["katrin", "fritz"])
 parser.add_argument("--id", required=True, help="NCBI IDs or Genbank IDs", choices=["ncbi", "genbank"])
 
 a = parser.parse_args()
@@ -18,11 +17,11 @@ a = parser.parse_args()
 if __name__ == "__main__":
     Entrez.email = 'YourID@hs-mittweida.de'
 
-    katrin = {"baltimore_4": "https://viralzone.expasy.org/245", "baltimore_5": "https://viralzone.expasy.org/240",
-              "baltimore_6": "https://viralzone.expasy.org/246"}
+    url_list = {"baltimore_4": "https://viralzone.expasy.org/245", "baltimore_5": "https://viralzone.expasy.org/240",
+                "baltimore_6": "https://viralzone.expasy.org/246"}
 
-    fritz = {"baltimore_1": "https://viralzone.expasy.org/238"}
-
+    if not os.path.exists("oriol/data"):
+        os.mkdir("oriol/data")
 
     """checking whether viral.txt exists or not --> if not download the file from ncbi"""
     if not os.path.exists("oriol/data/viral.txt"):
@@ -31,42 +30,55 @@ if __name__ == "__main__":
         urlreq.urlretrieve(url_ncbi, "oriol/data/viral.txt")
         print("Finished file download!")
 
-    if a.person == "katrin":
-        viruses = ViralZone(katrin, a.id)
-        virus_names = viruses.crawler()
-        baltimore_4 = viruses.extracting_accession_numbers(virus_names[0])
-        baltimore_5 = viruses.extracting_accession_numbers(virus_names[1])
-        baltimore_6 = viruses.extracting_accession_numbers(virus_names[2])
-    if a.person == "fritz":
-        viruses = ViralZone(fritz, a.id)
-        virus_names = viruses.crawler()
-        baltimore_1 = viruses.extracting_accession_numbers(virus_names[0])
+    viruses = ViralZone(a.id)
+    virus_names = viruses.crawler(url_list)
+    baltimore_4 = viruses.extracting_accession_numbers(virus_names[0])
+    baltimore_5 = viruses.extracting_accession_numbers(virus_names[1])
+    baltimore_6 = viruses.extracting_accession_numbers(virus_names[2])
 
-    if not os.path.exists("oriol/data/katrin"):
-        os.mkdir("oriol/data/katrin")
-    if not os.path.exists("oriol/data/katrin/ncbi_xml"):
-        os.mkdir("oriol/data/katrin/ncbi_xml")
-    if not os.path.exists("oriol/data/katrin/genbank_xml"):
-        os.mkdir("oriol/data/katrin/genbank_xml")
+    if not os.path.exists("oriol/data"):
+        os.mkdir("oriol/data")
+    if not os.path.exists("oriol/data/ncbi_xml"):
+        os.mkdir("oriol/data/ncbi_xml")
+    if not os.path.exists("oriol/data/genbank_xml"):
+        os.mkdir("oriol/data/genbank_xml")
 
-    if not len(os.listdir("oriol/data/katrin/ncbi_xml")) == np.sum(np.array([len(baltimore_4), len(baltimore_5), len(baltimore_6)])):
-        xml_download_baltimore_4 = GetXml(baltimore_4, "katrin", "ncbi")
-        xml_download_baltimore_4.download()
-        xml_download_baltimore_5 = GetXml(baltimore_5, "katrin", "ncbi")
-        xml_download_baltimore_5.download()
-        xml_download_baltimore_6 = GetXml(baltimore_6, "katrin", "ncbi")
-        xml_download_baltimore_6.download()
+    xml_download_baltimore_4 = GetXml(baltimore_4, a.id)
+    xml_download_baltimore_4.download("balt4")
+    xml_download_baltimore_5 = GetXml(baltimore_5, a.id)
+    xml_download_baltimore_5.download("balt5")
+    xml_download_baltimore_6 = GetXml(baltimore_6, a.id)
+    xml_download_baltimore_6.download("balt6")
 
-    xml_files = glob.glob(os.path.join("oriol/data/katrin/ncbi_xml/", "*.xml"))
+    if a.id == "ncbi":
+        list_of_xml = glob.glob(os.path.join("oriol/data/ncbi_xml/", "*.xml"))
+    elif a.id == "genbank":
+        list_of_xml = glob.glob(os.path.join("oriol/data/genbank_xml/", "*.xml"))
+
+    list_of_xml.sort()
+
+    if not os.path.exists("oriol/data/ncbi_xml/single_files"):
+        os.mkdir("oriol/data/ncbi_xml/single_files")
+
+    if not os.path.exists("oriol/data/genbank_xml/single_files"):
+        os.mkdir("oriol/data/genbank_xml/single_files")
+
+    splitting_downloaded_xml(a.id, list_of_xml)
+
+    if a.id == "ncbi":
+        xml_files = glob.glob(os.path.join("oriol/data/ncbi_xml/single_files", "*.xml"))
+    elif a.id == "genbank":
+        xml_files = glob.glob(os.path.join("oriol/data/genbank_xml/single_files", "*.xml"))
 
     splitted = [os.path.split(x) for x in xml_files]
-    "Only NCBI optimized"
-    ids = [x[:9] for _, x in splitted]
+
+    ids = [x[:-4] for _, x in splitted]
 
     baltimore = {}
     balti_4 = [key for key in baltimore_4]
     balti_5 = [key for key in baltimore_5]
     balti_6 = [key for key in baltimore_6]
+
     for element in balti_4:
         baltimore[element] = 4
     for element in balti_5:
@@ -84,8 +96,15 @@ if __name__ == "__main__":
 
     json_dict = parser.builder(ids, baltimore, definition, length, lineage, mol_type, cds, sequence)
 
-    os.mknod("oriol/data/katrin/ncbi.json")
-    with open('oriol/data/katrin/ncbi.json', 'w') as f:
-        json.dump(json_dict, f, indent=3)
+    if a.id == "ncbi":
+        os.mknod("oriol/data/ncbi.json")
+        with open('oriol/data/ncbi.json', 'w') as f:
+            json.dump(json_dict, f, indent=3)
+    elif a.id == "genbank":
+        os.mknod("oriol/data/genbank.json")
+        with open('oriol/data/genbank.json', 'w') as f:
+            json.dump(json_dict, f, indent=3)
+
+
 
 
